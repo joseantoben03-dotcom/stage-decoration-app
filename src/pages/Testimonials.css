@@ -1,0 +1,49 @@
+/* /client/src/components/Testimonials.css */
+
+.testimonials-section {
+  padding: 4rem 0;
+  background-color: #fff9fb; /* Match your body background or a slightly different shade */
+}
+
+.testimonial-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 4rem; /* Add padding for space around text */
+  text-align: center;
+}
+
+.testimonial-content .quote {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.testimonial-content .author {
+  font-family: 'Garamond', serif;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--dark-pink);
+}
+
+/* --- Styling Swiper's Navigation and Pagination --- */
+.swiper-button-next,
+.swiper-button-prev {
+  color: var(--dark-pink) !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: var(--dark-pink) !important;
+}
+
+/* On smaller screens, reduce padding */
+@media (max-width: 768px) {
+  .testimonial-content {
+    padding: 1rem 1.5rem;
+  }
+  .testimonial-content .quote {
+    font-size: 1.2rem;
+  }
+}

@@ -1,0 +1,298 @@
+/* /client/src/App.css */
+
+:root {
+  --pink: #f8c8dc;
+  --dark-pink: #e1a6c0;
+  --white: #ffffff;
+  --text-color: #444;
+  --bg-color: #fff9fb;
+  --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+body {
+ margin: 0;
+  font-family: 'Garamond', serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+}
+
+.heading{
+  color: var(--white);
+}
+
+/* --- Glassy Card Effect --- */
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 2.5rem;
+  box-shadow: var(--shadow);
+}
+
+/* --- Button Styles --- */
+.btn {
+  background: var(--pink);
+  color: var(--text-color);
+  border: none;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: var(--shadow);
+}
+
+.btn-custom:hover {
+  background: var(--dark-pink);
+  border-color: var(--dark-pink);
+  color: var(--text-color);
+}
+
+/* --- Navbar & Footer --- */
+.navbar, .footer {
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+}
+
+.navbar {
+   padding: 1rem 2rem;
+  /* UPDATED: Changed background to a glassy pink */
+  background: rgba(248, 200, 220, 0.7); 
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-logo {
+  .nav-logo {
+  font-size: 1.8rem !important;
+  font-weight: bold;
+  font-family: 'Playfair Display', serif;
+  color: var(--text-color) !important;
+}
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 2rem;
+  margin: 0;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #000000;
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover {
+  color:#000000;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.footer {
+  text-align: center;
+  margin-top: auto;
+  font-size: 0.9rem;
+}
+
+/* --- Contact Form Styles --- */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.contact-form label {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.contact-form input,
+.contact-form textarea {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.8);
+  font-family: 'Garamond', serif;
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(248, 200, 220, 0.5);
+}
+
+/* --- Gallery Styles --- */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.gallery-item {
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.services-list {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+  max-width: 400px;
+  margin: 1rem auto 0;
+}
+
+.services-list li {
+  padding: 0.5rem 0;
+  font-size: 1.1rem;
+  border-bottom: 1px solid rgba(248, 200, 220, 0.5);
+}
+
+.services-list li:last-child {
+  border-bottom: none;
+}
+
+/* Find and replace the .service-card styles in App.css */
+.service-card {
+  border: none;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+/* Add these new styles below the .service-card styles */
+.service-card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.service-card:hover .service-card-image {
+  transform: scale(1.05); /* Zoom effect on hover */
+}
+
+.service-card-content {
+  padding: 1.5rem;
+}
+
+.service-card-content h3 {
+  margin-top: 0;
+  color: var(--dark-pink);
+}
+
+.navbar-custom {
+  background: rgba(248, 200, 220, 0.7); 
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  padding: 1rem 0;
+}
+
+@media (max-width: 768px) {
+  .navbar-custom .container, 
+  .navbar-custom .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: 'Garamond', serif;
+  color: var(--text-color);
+
+  /* THIS IS THE GLOW-UP */
+  background: 
+    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+    url("../public/img14.jpg");
+  
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+}
