@@ -44,15 +44,19 @@ const Footer = () => {
             <ul className="contact-list">
               <li>
                 <a href="tel:+919003857716">
-                  <FiPhone className="icon" /> +91 90038 57716
+                  <FiPhone className="icon" /> +91 8072964758
                 </a>
               </li>
               {/* Updated clickable mailto link */}
               <li>
-                <a href="mailto:seyadriyaz0@gmail.com">
-                  <FiMail className="icon" /> seyadriyaz0@gmail.com
-                </a>
-              </li>
+  <a
+    href="https://mail.google.com/mail/?view=cm&fs=1&to=joseantoben03@gmail.com"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <FiMail className="icon" /> joseantoben03@gmail.com
+  </a>
+</li>
               {/* Updated location */}
               <li><FiMapPin className="icon" /> Tirunelveli, Tamil Nadu</li>
             </ul>
