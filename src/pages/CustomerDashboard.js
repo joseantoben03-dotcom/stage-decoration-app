@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Container, Row, Col, Card, Button, Modal, Form, Spinner } from "react-bootstrap";
+import { Container, Col, Card, Button, Modal, Form, Spinner } from "react-bootstrap";
 import { motion } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
-  const [projects, setProjects] = useState([]);
   const [packages, setPackages] = useState([]);
   const [bookedPackageIds, setBookedPackageIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [organizers, setOrganizers] = useState([]);
   const [filter, setFilter] = useState({ organizerId: "", minPrice: "", maxPrice: "" });
+  const [bookingTimes, setBookingTimes] = useState({}); // Store booked timestamps
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [formData, setFormData] = useState({
     location: "",
     contactNumber: "",
@@ -29,26 +31,40 @@ const CustomerDashboard = () => {
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.15 } } };
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
+  const cardVariants = {
+    hover: { scale: 1.05, transition: { duration: 0.3 } },
+    tap: { scale: 0.95, transition: { duration: 0.1 } }
+  };
 
+  // Fetch packages, organizers, and booked packages
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) return;
       setLoading(true);
       try {
-        const [projRes, bookedRes, orgRes, pkgRes] = await Promise.all([
-          axios.get("http://localhost:8080/api/projects/all"),
+        const [bookedRes, orgRes, pkgRes] = await Promise.all([
           axios.get(`http://localhost:8080/api/bookings/customer/${user.id}`),
           axios.get("http://localhost:8080/api/customers/organizers"),
           axios.get("http://localhost:8080/api/customers/packages")
         ]);
 
-        setProjects(Array.isArray(projRes.data) ? projRes.data : []);
         setOrganizers(Array.isArray(orgRes.data) ? orgRes.data : []);
 
         const bookedIds = Array.isArray(bookedRes.data)
           ? bookedRes.data.map(b => b.decorationPackage?.id).filter(Boolean)
           : [];
         setBookedPackageIds(bookedIds);
+
+        // Store booking times
+        const times = {};
+        if (Array.isArray(bookedRes.data)) {
+          bookedRes.data.forEach(b => {
+            if (b.decorationPackage?.id && b.bookingTime) {
+              times[b.decorationPackage.id] = new Date(b.bookingTime).toLocaleString();
+            }
+          });
+        }
+        setBookingTimes(times);
 
         let pkgData = [];
         if (Array.isArray(pkgRes.data)) {
@@ -57,7 +73,6 @@ const CustomerDashboard = () => {
           pkgData = pkgRes.data.packages;
         }
 
-        // Convert organizers array to single organizer object for frontend
         pkgData = pkgData.map(pkg => {
           const organizer = Array.isArray(pkg.organizers) && pkg.organizers.length > 0
             ? { ...pkg.organizers[0] }
@@ -120,9 +135,13 @@ const CustomerDashboard = () => {
     setShowModal(true);
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleImageClick = (imageUrl, e) => {
+    e.stopPropagation();
+    setSelectedImage(imageUrl);
+    setShowImageModal(true);
   };
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmitBooking = async () => {
     if (!formData.organizerId) {
@@ -131,7 +150,7 @@ const CustomerDashboard = () => {
     }
 
     try {
-      await axios.post("http://localhost:8080/api/bookings", {
+      const res = await axios.post("http://localhost:8080/api/bookings", {
         customerId: user.id,
         packageId: selectedPackage.id,
         organizerId: formData.organizerId,
@@ -142,7 +161,10 @@ const CustomerDashboard = () => {
       });
 
       setBookedPackageIds(prev => [...prev, selectedPackage.id]);
-      alert("Package booked successfully!");
+      const bookedAt = new Date(res.data.bookingTime).toLocaleString();
+      setBookingTimes(prev => ({ ...prev, [selectedPackage.id]: bookedAt }));
+
+      alert(`Package booked successfully!\nBooked at: ${bookedAt}`);
       setShowModal(false);
     } catch (err) {
       console.error("Booking failed:", err.response || err.message);
@@ -154,6 +176,11 @@ const CustomerDashboard = () => {
     try {
       await axios.delete("http://localhost:8080/api/bookings", { params: { customerId: user.id, packageId: pkgId } });
       setBookedPackageIds(prev => prev.filter(id => id !== pkgId));
+      setBookingTimes(prev => {
+        const copy = { ...prev };
+        delete copy[pkgId];
+        return copy;
+      });
       alert("Package unbooked successfully!");
     } catch (err) {
       console.error("Unbooking failed:", err.response || err.message);
@@ -174,27 +201,6 @@ const CustomerDashboard = () => {
   return (
     <Container className="my-5">
       <h2 className="text-center mb-4" style={{ color: "#fff" }}>Welcome, {user.name} (Customer)</h2>
-
-      {/* <h3 className="mb-3" style={{ color: "#fff" }}>Available Projects</h3>
-      <MotionRow className="row g-4" variants={containerVariants} initial="hidden" animate="visible">
-        {projects.length > 0 ? projects.map(p => (
-          <MotionCol className="col-md-6 col-lg-4" key={p.id} variants={itemVariants}>
-            <Card className="h-100">
-              {p.imageUrl && <Card.Img variant="top" src={`http://localhost:8080${p.imageUrl}`} alt={p.title} />}
-              <Card.Body>
-                <Card.Title>{p.title}</Card.Title>
-                <Card.Text>{p.description}</Card.Text>
-                <Card.Text>
-                  <small className="text-muted">
-                    Organizer: {p.organizer?.name || "N/A"} <br />
-                    Phone: {p.organizer?.phoneNumber || "N/A"}
-                  </small>
-                </Card.Text>
-              </Card.Body>
-            </Card>
-          </MotionCol>
-        )) : <Col><p style={{ color: "#fff" }}>No projects available yet.</p></Col>}
-      </MotionRow> */}
 
       <h3 className="mt-5 mb-3" style={{ color: "#fff" }}>Filter Packages</h3>
       <Form className="mb-4 d-flex gap-3 flex-wrap">
@@ -225,23 +231,40 @@ const CustomerDashboard = () => {
           const isBooked = bookedPackageIds.includes(pkg.id);
           return (
             <MotionCol className="col-md-6 col-lg-4" key={pkg.id} variants={itemVariants}>
-              <Card className="h-100">
-                {pkg.imageUrl && <Card.Img variant="top" src={`http://localhost:8080${pkg.imageUrl}`} alt={pkg.title} />}
-                <Card.Body>
-                  <Card.Title>{pkg.title}</Card.Title>
-                  <Card.Text><strong>Price: ₹{pkg.price}</strong></Card.Text>
-                  <Card.Text>{pkg.description}</Card.Text>
-                  <Card.Text>
-                    <small className="text-muted">
-                      Organizer: {pkg.organizer?.name || "N/A"} <br />
-                      Phone: {pkg.organizer?.phoneNumber || "N/A"}
-                    </small>
-                  </Card.Text>
-                  <Button variant={isBooked ? "danger" : "primary"} onClick={() => isBooked ? handleUnbookPackage(pkg.id) : openBookingForm(pkg)}>
-                    {isBooked ? "Unbook Package" : "Book Package"}
-                  </Button>
-                </Card.Body>
-              </Card>
+              <motion.div whileHover="hover" whileTap="tap" variants={cardVariants} style={{ height: "100%" }}>
+                <Card className="h-100" style={{ display: "flex", flexDirection: "column" }}>
+                  {pkg.imageUrl && (
+                    <Card.Img 
+                      variant="top" 
+                      src={`http://localhost:8080${pkg.imageUrl}`} 
+                      alt={pkg.title}
+                      onClick={(e) => handleImageClick(`http://localhost:8080${pkg.imageUrl}`, e)}
+                      style={{ cursor: "pointer", height: "200px", objectFit: "cover" }}
+                    />
+                  )}
+                  <Card.Body style={{ display: "flex", flexDirection: "column", flex: "1" }}>
+                    <Card.Title>{pkg.title}</Card.Title>
+                    <Card.Text><strong>Price: ₹{pkg.price}</strong></Card.Text>
+                    <Card.Text style={{ flex: "1" }}>{pkg.description}</Card.Text>
+                    <Card.Text>
+                      <small className="text-muted">
+                        Organizer: {pkg.organizer?.name || "N/A"} <br />
+                        Phone: {pkg.organizer?.phoneNumber || "N/A"}
+                      </small>
+                    </Card.Text>
+                    {isBooked && bookingTimes[pkg.id] && (
+                      <p style={{ fontSize: "0.85rem", color: "#0f0" }}>Booked on: {bookingTimes[pkg.id]}</p>
+                    )}
+                    <Button 
+                      variant={isBooked ? "danger" : "primary"} 
+                      onClick={() => isBooked ? handleUnbookPackage(pkg.id) : openBookingForm(pkg)}
+                      style={{ marginTop: "auto" }}
+                    >
+                      {isBooked ? "Unbook Package" : "Book Package"}
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </motion.div>
             </MotionCol>
           );
         }) : <Col><p style={{ color: "#fff" }}>No packages available yet.</p></Col>}
@@ -255,11 +278,7 @@ const CustomerDashboard = () => {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Organizer</Form.Label>
-              <Form.Select
-                name="organizerId"
-                value={formData.organizerId}
-                onChange={handleChange}
-              >
+              <Form.Select name="organizerId" value={formData.organizerId} onChange={handleChange}>
                 {selectedPackage?.organizers?.map(o => (
                   <option key={o.id} value={o.id}>{o.name}</option>
                 ))}
@@ -275,11 +294,11 @@ const CustomerDashboard = () => {
               <Form.Control type="text" name="contactNumber" value={formData.contactNumber} onChange={handleChange} />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Time</Form.Label>
+              <Form.Label>Time (Event Time)</Form.Label>
               <Form.Control type="time" name="time" value={formData.time} onChange={handleChange} />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Day</Form.Label>
+              <Form.Label>Day (Event Day)</Form.Label>
               <Form.Control type="date" name="day" value={formData.day} onChange={handleChange} />
             </Form.Group>
           </Form>
@@ -288,6 +307,45 @@ const CustomerDashboard = () => {
           <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
           <Button variant="primary" onClick={handleSubmitBooking}>Confirm Booking</Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Image Preview Modal */}
+      <Modal 
+        show={showImageModal} 
+        onHide={() => setShowImageModal(false)} 
+        fullscreen={true}
+        centered
+        dialogClassName="image-preview-modal"
+      >
+        <Modal.Header closeButton style={{ backgroundColor: "rgba(0,0,0,0.95)", borderBottom: "none" }}>
+          <Modal.Title style={{ color: "#fff" }}>Image Preview</Modal.Title>
+        </Modal.Header>
+        <Modal.Body 
+          className="text-center d-flex align-items-center justify-content-center" 
+          style={{ 
+            backgroundColor: "rgba(0,0,0,0.95)", 
+            padding: "20px",
+            cursor: "zoom-out"
+          }}
+          onClick={() => setShowImageModal(false)}
+        >
+          {selectedImage && (
+            <motion.img 
+              src={selectedImage} 
+              alt="Package" 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              style={{ 
+                maxWidth: "95%", 
+                maxHeight: "95vh", 
+                objectFit: "contain",
+                borderRadius: "8px",
+                boxShadow: "0 0 50px rgba(255,255,255,0.1)"
+              }}
+            />
+          )}
+        </Modal.Body>
       </Modal>
     </Container>
   );

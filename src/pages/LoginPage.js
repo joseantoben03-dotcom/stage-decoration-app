@@ -1,13 +1,15 @@
+// src/pages/LoginPage.js
 import React, { useState } from 'react';
 import { Form, Button, Container, Alert } from 'react-bootstrap';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext'; // <-- import hook
+import { useAuth } from '../auth/AuthContext';
 
 const LoginPage = () => {
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { login } = useAuth(); // <-- get login function from context
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,14 +17,21 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const userData = await login(form.email, form.password); // <-- call context login
-      console.log("Logged in:", userData);
+      const res = await axios.post("http://localhost:8080/api/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
 
-      if (userData.role === 'CUSTOMER') {
+      login(res.data); // Save user in context
+
+      if (res.data.role.toUpperCase() === 'CUSTOMER') {
         navigate('/customer-dashboard');
-      } else {
+      } else if (res.data.role.toUpperCase() === 'ORGANIZER') {
         navigate('/organizer-dashboard');
+      } else {
+        navigate('/');
       }
     } catch (err) {
       setError("Invalid email or password");
