@@ -3,6 +3,7 @@ import axios from "axios";
 import { Container, Col, Card, Button, Modal, Form, Spinner } from "react-bootstrap";
 import { motion } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
+import { API_BASE_URL } from "../config";
 
 const CustomerDashboard = () => {
   const { user } = useAuth();
@@ -11,9 +12,8 @@ const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [organizers, setOrganizers] = useState([]);
   const [filter, setFilter] = useState({ organizerId: "", minPrice: "", maxPrice: "" });
-  const [bookingTimes, setBookingTimes] = useState({}); // Store booked timestamps
-
-  // Modal states
+  const [bookingTimes, setBookingTimes] = useState({});
+  
   const [showModal, setShowModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -31,21 +31,17 @@ const CustomerDashboard = () => {
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.15 } } };
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
-  const cardVariants = {
-    hover: { scale: 1.05, transition: { duration: 0.3 } },
-    tap: { scale: 0.95, transition: { duration: 0.1 } }
-  };
+  const cardVariants = { hover: { scale: 1.05, transition: { duration: 0.3 } }, tap: { scale: 0.95, transition: { duration: 0.1 } } };
 
-  // Fetch packages, organizers, and booked packages
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) return;
       setLoading(true);
       try {
         const [bookedRes, orgRes, pkgRes] = await Promise.all([
-          axios.get(`http://localhost:8080/api/bookings/customer/${user.id}`),
-          axios.get("http://localhost:8080/api/customers/organizers"),
-          axios.get("http://localhost:8080/api/customers/packages")
+          axios.get(`${API_BASE_URL}/api/bookings/customer/${user.id}`),
+          axios.get(`${API_BASE_URL}/api/customers/organizers`),
+          axios.get(`${API_BASE_URL}/api/customers/packages`)
         ]);
 
         setOrganizers(Array.isArray(orgRes.data) ? orgRes.data : []);
@@ -55,7 +51,6 @@ const CustomerDashboard = () => {
           : [];
         setBookedPackageIds(bookedIds);
 
-        // Store booking times
         const times = {};
         if (Array.isArray(bookedRes.data)) {
           bookedRes.data.forEach(b => {
@@ -83,7 +78,7 @@ const CustomerDashboard = () => {
         setPackages(pkgData);
       } catch (err) {
         console.error("Error fetching data:", err.response || err.message);
-        alert("Failed to fetch data. Check backend or network connection.");
+        alert("Failed to fetch data from backend. Make sure API_BASE_URL is correct.");
       } finally {
         setLoading(false);
       }
@@ -101,13 +96,10 @@ const CustomerDashboard = () => {
       if (filter.minPrice) params.minPrice = filter.minPrice;
       if (filter.maxPrice) params.maxPrice = filter.maxPrice;
 
-      const res = await axios.get("http://localhost:8080/api/customers/packages", { params });
+      const res = await axios.get(`${API_BASE_URL}/api/customers/packages`, { params });
       let data = [];
-      if (Array.isArray(res.data)) {
-        data = res.data;
-      } else if (res.data && Array.isArray(res.data.packages)) {
-        data = res.data.packages;
-      }
+      if (Array.isArray(res.data)) data = res.data;
+      else if (res.data && Array.isArray(res.data.packages)) data = res.data.packages;
 
       data = data.map(pkg => {
         const organizer = Array.isArray(pkg.organizers) && pkg.organizers.length > 0
@@ -144,13 +136,9 @@ const CustomerDashboard = () => {
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmitBooking = async () => {
-    if (!formData.organizerId) {
-      alert("Please select an organizer");
-      return;
-    }
-
+    if (!formData.organizerId) { alert("Please select an organizer"); return; }
     try {
-      const res = await axios.post("http://localhost:8080/api/bookings", {
+      const res = await axios.post(`${API_BASE_URL}/api/bookings`, {
         customerId: user.id,
         packageId: selectedPackage.id,
         organizerId: formData.organizerId,
@@ -174,13 +162,9 @@ const CustomerDashboard = () => {
 
   const handleUnbookPackage = async (pkgId) => {
     try {
-      await axios.delete("http://localhost:8080/api/bookings", { params: { customerId: user.id, packageId: pkgId } });
+      await axios.delete(`${API_BASE_URL}/api/bookings`, { params: { customerId: user.id, packageId: pkgId } });
       setBookedPackageIds(prev => prev.filter(id => id !== pkgId));
-      setBookingTimes(prev => {
-        const copy = { ...prev };
-        delete copy[pkgId];
-        return copy;
-      });
+      setBookingTimes(prev => { const copy = { ...prev }; delete copy[pkgId]; return copy; });
       alert("Package unbooked successfully!");
     } catch (err) {
       console.error("Unbooking failed:", err.response || err.message);
@@ -211,17 +195,14 @@ const CustomerDashboard = () => {
             {organizers.length > 0 ? organizers.map(o => <option key={o.id} value={o.id}>{o.name}</option>) : <option disabled>No organizers available</option>}
           </Form.Select>
         </Form.Group>
-
         <Form.Group>
           <Form.Label style={{ color: "#fff" }}>Min Price</Form.Label>
           <Form.Control type="number" name="minPrice" value={filter.minPrice} onChange={handleFilterChange} />
         </Form.Group>
-
         <Form.Group>
           <Form.Label style={{ color: "#fff" }}>Max Price</Form.Label>
           <Form.Control type="number" name="maxPrice" value={filter.maxPrice} onChange={handleFilterChange} />
         </Form.Group>
-
         <Button variant="primary" onClick={applyFilters} style={{ alignSelf: "end" }}>Apply Filters</Button>
       </Form>
 
@@ -236,9 +217,9 @@ const CustomerDashboard = () => {
                   {pkg.imageUrl && (
                     <Card.Img 
                       variant="top" 
-                      src={`http://localhost:8080${pkg.imageUrl}`} 
+                      src={`${API_BASE_URL}${pkg.imageUrl}`} 
                       alt={pkg.title}
-                      onClick={(e) => handleImageClick(`http://localhost:8080${pkg.imageUrl}`, e)}
+                      onClick={(e) => handleImageClick(`${API_BASE_URL}${pkg.imageUrl}`, e)}
                       style={{ cursor: "pointer", height: "200px", objectFit: "cover" }}
                     />
                   )}
@@ -309,7 +290,6 @@ const CustomerDashboard = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Image Preview Modal */}
       <Modal 
         show={showImageModal} 
         onHide={() => setShowImageModal(false)} 
@@ -322,11 +302,7 @@ const CustomerDashboard = () => {
         </Modal.Header>
         <Modal.Body 
           className="text-center d-flex align-items-center justify-content-center" 
-          style={{ 
-            backgroundColor: "rgba(0,0,0,0.95)", 
-            padding: "20px",
-            cursor: "zoom-out"
-          }}
+          style={{ backgroundColor: "rgba(0,0,0,0.95)", padding: "20px", cursor: "zoom-out" }}
           onClick={() => setShowImageModal(false)}
         >
           {selectedImage && (
@@ -336,13 +312,7 @@ const CustomerDashboard = () => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              style={{ 
-                maxWidth: "95%", 
-                maxHeight: "95vh", 
-                objectFit: "contain",
-                borderRadius: "8px",
-                boxShadow: "0 0 50px rgba(255,255,255,0.1)"
-              }}
+              style={{ maxWidth: "95%", maxHeight: "95vh", objectFit: "contain", borderRadius: "8px", boxShadow: "0 0 50px rgba(255,255,255,0.1)" }}
             />
           )}
         </Modal.Body>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Button, Container, Alert } from 'react-bootstrap';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config'; // ✅ use your config for backend URL
 
 const SignupPage = () => {
   const [form, setForm] = useState({
@@ -10,35 +11,39 @@ const SignupPage = () => {
     password: '',
     confirmPassword: '',
     role: 'CUSTOMER',
-    phoneNumber: '', // ✅ new field
+    phoneNumber: '',
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    setError('');
+
     if (form.password !== form.confirmPassword) {
       return setError("Passwords do not match");
     }
 
     try {
-      const response = await axios.post("http://localhost:8080/api/auth/register", {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
         name: form.name,
         email: form.email,
         password: form.password,
         role: form.role,
-        phoneNumber: form.phoneNumber, // ✅ include in request
+        phoneNumber: form.phoneNumber,
       });
 
       console.log("Registered:", response.data);
       navigate('/login');
     } catch (err) {
-      setError("Failed to create account. Email or phone number may already exist.");
       console.error(err);
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Failed to create account. Email or phone number may already exist.");
+      }
     }
   };
 
@@ -47,13 +52,14 @@ const SignupPage = () => {
       <div className="glass-card p-4">
         <h2 className="text-center mb-4">Sign Up</h2>
         {error && <Alert variant="danger">{error}</Alert>}
+
         <Form onSubmit={handleSignup}>
           <Form.Group className="mb-3">
             <Form.Label>Full Name</Form.Label>
             <Form.Control
               type="text"
-              placeholder="Enter full name"
               name="name"
+              placeholder="Enter full name"
               value={form.name}
               onChange={handleChange}
               required
@@ -64,8 +70,8 @@ const SignupPage = () => {
             <Form.Label>Email</Form.Label>
             <Form.Control
               type="email"
-              placeholder="Enter email"
               name="email"
+              placeholder="Enter email"
               value={form.email}
               onChange={handleChange}
               required
@@ -76,12 +82,12 @@ const SignupPage = () => {
             <Form.Label>Mobile Number</Form.Label>
             <Form.Control
               type="tel"
-              placeholder="Enter mobile number"
               name="phoneNumber"
+              placeholder="Enter mobile number"
               value={form.phoneNumber}
               onChange={handleChange}
               required
-              pattern="\d{10}" // simple validation for 10 digits
+              pattern="\d{10}"
               title="Enter a 10-digit phone number"
             />
           </Form.Group>
@@ -90,8 +96,8 @@ const SignupPage = () => {
             <Form.Label>Password</Form.Label>
             <Form.Control
               type="password"
-              placeholder="Enter password"
               name="password"
+              placeholder="Enter password"
               value={form.password}
               onChange={handleChange}
               required
@@ -102,8 +108,8 @@ const SignupPage = () => {
             <Form.Label>Confirm Password</Form.Label>
             <Form.Control
               type="password"
-              placeholder="Confirm password"
               name="confirmPassword"
+              placeholder="Confirm password"
               value={form.confirmPassword}
               onChange={handleChange}
               required
